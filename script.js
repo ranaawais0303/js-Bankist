@@ -63,15 +63,20 @@ const inputClosePin = document.querySelector('.form__input--pin');
 
 
 //start from here
-const displayMovements = function(move) {
+const displayMovements = function(movements, sort = false) {
     containerMovements.innerHTML = ''
-    move.forEach(function(mov, i) {
+
+    //sort
+    const movs = sort ? movements.slice().sort((a, b) =>
+        a - b) : movements;
+
+    movs.forEach(function(mov, i) {
         const type = mov > 0 ? 'deposit' : 'withdrawal';
         const html = `<div class="movements__row">
         <div class="movements__type movements__type--${type}">${
           i+1} ${type}</div>
         
-        <div class="movements__value">${Math.abs(mov)}€</div>
+        <div class="movements__value">${mov}€</div>
       </div>`;
         containerMovements.insertAdjacentHTML('afterbegin', html)
 
@@ -193,6 +198,18 @@ btnTransfer.addEventListener('click', function(e) {
 
     }
 });
+
+////////////////////////////Event Listener for button sort////////////
+
+let sorted = false;
+btnSort.addEventListener('click', function(e) {
+    //user preventDefault because these buttons in the form and
+    //always reload the form when click so to avoid reloaded 
+    //call preventDefault
+    e.preventDefault();
+    displayMovements(currentAccount.movements, !sorted)
+    sorted = !sorted
+})
 
 /////////////////////////////Event listener for Load//////////////////
 btnLoan.addEventListener('click', function(e) {
