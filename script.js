@@ -370,3 +370,54 @@ const arr = [
     [4, 5, 6], 7, 9
 ]
 console.log(arr.flat())
+
+
+/////////Array methods practice/////////////////////////////
+//1- total deposits in bank
+const bankDeposits = accounts
+    .flatMap(acc => acc.movements)
+    .filter(acc => acc > 0)
+    .reduce((sum, cur) => sum + cur, 0)
+console.log(bankDeposits)
+
+//2-how many deposit atleast 1000   in bank
+
+// 1 solution const numDeposits = accounts
+//     .flatMap(acc => acc.movements).filter(acc => acc >= 1000).length
+// console.log(numDeposits)
+
+//2nd solution
+const numDeposits = accounts
+    .flatMap(acc => acc.movements).reduce((count, cur) =>
+        (cur >= 1000 ? ++count : count), 0)
+console.log(numDeposits)
+
+//3- create new object
+
+const { deposits, withdrawl } = accounts
+    .flatMap(acc => acc.movements)
+    .reduce(
+        (sums, curr) => {
+
+            // curr > 0 ? (sums.deposit += curr) : (sums.withdrawls += curr)
+            sums[curr > 0 ? 'deposits' : 'withdrawl'] += curr
+            return sums
+        }, { deposits: 0, withdrawl: 0 })
+console.log(deposits, withdrawl);
+
+//4 title case
+const covertTitleCase = function(title) {
+    const capitalize = str => str[0]
+        .toUpperCase() + str.slice(1)
+    const exceptions = ['a', 'an', 'the', 'but', 'or', 'on', 'in', 'with']
+
+    const titleCase = title
+        .toLowerCase()
+        .split(' ')
+        .map(
+            word => exceptions.includes(word) ? word : capitalize(word)
+        ).join(' ');
+    return capitalize(titleCase);
+}
+console.log(covertTitleCase('i am Rana aWais m an engineer'));
+console.log(covertTitleCase('the am Rana aWais m an h'));
