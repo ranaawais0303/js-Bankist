@@ -106,6 +106,8 @@ const inputClosePin = document.querySelector('.form__input--pin');
 
 //start from here
 
+
+//date formatter
 const formatMovementDate = function(date, locale) {
     const calcDaysPassed = (date1, date2) =>
         Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24))
@@ -121,9 +123,15 @@ const formatMovementDate = function(date, locale) {
     // return `${day}/${month}/${year}`
     return new Intl.DateTimeFormat(locale).format(date)
 
-
-
 }
+
+const formatCur = function(value, locale, currency) {
+    return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency
+    }).format(value)
+}
+
 const displayMovements = function(acc, sort = false) {
     containerMovements.innerHTML = ''
 
@@ -137,12 +145,14 @@ const displayMovements = function(acc, sort = false) {
         const date = new Date(acc.movementsDates[i]);
 
         const displayDate = formatMovementDate(date, acc.locale)
+        const formattedMov = formatCur(mov, acc.locale,
+            acc.currency)
 
         const html = `<div class="movements__row">
         <div class="movements__type movements__type--${type}">${
           i+1} ${type}</div>
           <div class="movements__date">${displayDate}</div>
-        <div class="movements__value">${mov.toFixed(2)}€</div>
+        <div class="movements__value">${formattedMov}</div>
       </div>`;
         containerMovements.insertAdjacentHTML('afterbegin', html)
 
@@ -157,7 +167,10 @@ const calDisplayBalance = function(acc) {
     acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0)
         // acc.balance = balance;
 
-    labelBalance.textContent = `${acc.balance.toFixed(2)} €`;
+    // const formattedMov = formatCur(acc.balance, acc.locale,
+    //     acc.currency)
+    labelBalance.textContent = formatCur(acc.balance, acc.locale,
+        acc.currency);
 }
 
 //////////////////////Display Summary/////////////////////////////////////////////
@@ -167,19 +180,22 @@ const displaySummary = function(acc) {
         const income = acc.movements.filter(mov => mov > 0)
             .reduce((acc, mov) => acc + mov, 0)
 
-        labelSumIn.textContent = `${ income.toFixed(2) } €`;
+        labelSumIn.textContent = formatCur(income, acc.locale,
+            acc.currency);;
 
         //for withdrawl summary
         const out = acc.movements.filter(mov => mov < 0)
             .reduce((acc, mov) => acc + mov, 0)
-        labelSumOut.textContent = `${ Math.abs(out).toFixed(2) } €`;
+        labelSumOut.textContent = formatCur(Math.abs(out), acc.locale,
+            acc.currency);;
 
         //for interest summary
         const interest = acc.movements.filter(mov => mov > 0)
             .map(mov => mov * acc.interestRate / 100)
             .filter((int, i, arr) => int >= 1)
             .reduce((acc, mov) => acc + mov, 0)
-        labelSumInterest.textContent = `${interest.toFixed(2)} €`
+        labelSumInterest.textContent = formatCur(interest, acc.locale,
+            acc.currency);
     }
     // displaySummary(account1.movements)
 
@@ -213,26 +229,49 @@ const updateUI = function(acc) {
         //instead of passing 2 argument we can only pass whole object if you want
 
 }
-console.log(accounts)
+
 
 ///////////////////////////Login Functionality///////////////////////////////////
 
+const startLogOutTimer = function() {
+    const tick = function() {
+        const min = String(Math.trunc(time / 60))
+            .padStart(2, 0);
+        const sec = String(time % 60).padStart(2, 0);
+
+        //in each call print the remaining tim to UI
+        labelTimer.textContent = `${min}:${sec}`;
+
+
+        //when time 0 second ,stop timer and logout user 
+        if (time === 0) {
+            clearInterval(timer);
+            labelWelcome.textContent = 'log in to get started'
+            containerApp.style.opacity = 0
+        }
+
+        //decrease 1 second
+        time--;
+    };
+    //set Time to 5 minutes
+    let time = 120;
+
+    tick()
+        //call the timer every second
+    const timer = setInterval(tick, 1000)
+    return timer;
+
+}
+
+/////////////////////////////////////////////////
+let currentAccount, timer;
+
+// //FAKE ALWAYS LOGGED IN
+// currentAccount = account1;
+// updateUI(currentAccount);
+// containerApp.style.opacity = 100;
+
 //event Handler
-
-let currentAccount;
-
-//FAKE ALWAYS LOGGED IN
-currentAccount = account1;
-updateUI(currentAccount);
-containerApp.style.opacity = 100;
-
-
-
-
-
-
-
-
 btnLogin.addEventListener('click', function(e) {
     e.preventDefault();
     console.log('welcom rana')
@@ -267,6 +306,10 @@ btnLogin.addEventListener('click', function(e) {
         //clear the field
         inputLoginUsername.value = inputLoginPin.value = '';
         inputLoginPin.blur();
+
+        //timer
+        if (timer) clearInterval(timer);
+        timer = startLogOutTimer();
         //update UI
         updateUI(currentAccount);
 
@@ -298,10 +341,17 @@ btnTransfer.addEventListener('click', function(e) {
         //update UI
         updateUI(currentAccount);
 
-        console.log('Transfer is valid')
-
+        //Reset the timer
+        clearInterval(timer);
+        timer = startLogOutTimer();
     }
 });
+
+// setTimeout(() => { containerApp.style.opacity = 0 }, 5000)
+// setInterval(() => {
+//     const now = new Date()
+//     console.log(now)
+// }, 1000)
 
 ////////////////////////////Event Listener for button sort////////////
 
@@ -322,18 +372,25 @@ btnLoan.addEventListener('click', function(e) {
     if (amount > 0 && currentAccount.movements
         .some(mov => mov >= amount * 0.1)) {
 
-        //add movements
-        currentAccount.movements.push(amount)
 
-        //Add Loan date
-        currentAccount.movementsDates.push(new Date().toISOString())
+        //setTimeout
+        setTimeout(function() { //add movements
+            currentAccount.movements.push(amount)
 
-        //update UI
-        updateUI(currentAccount)
+            //Add Loan date
+            currentAccount.movementsDates.push(new Date().toISOString())
 
+            //update UI
+            updateUI(currentAccount);
+
+            //Reset the timer
+            clearInterval(timer);
+            timer = startLogOutTimer();
+
+        }, 2500)
     }
-    //clear input fields
     inputLoanAmount.value = ''
+        //clear input fields
 
 })
 
